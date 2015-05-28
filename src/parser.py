@@ -1,5 +1,6 @@
 from src.grammar.numbers import Integer, SignedInteger, Float, SignedFloat, Number
-from src.grammar.objects import Identifier
+from src.grammar.objects import Identifier, Calculation, CalcType
+from src.memory import Memory
 from src.tokens import TokenType
 from src.utils import UnexpectedToken, EOFException
 
@@ -7,12 +8,12 @@ from src.utils import UnexpectedToken, EOFException
 class Parser():
     def __init__(self, scanner):
         self.scanner = scanner
+        self.memory = Memory()
 
     def parse(self):
         return
 
     ## helper methods
-
     def _advance(self):
         try:
             self.scanner.read_next_token()
@@ -23,12 +24,12 @@ class Parser():
         token = self.scanner.get_token()
         if token.type != type:
             raise UnexpectedToken(
-                "Error at position {3}: Expected token of type {0}, got {1} with value {2}".format(type, token.type,
-                                                                                                   token.value, str(
+                "Error at position {3}: Expected token type {2} of value {0}, got {1}".format(type, token.value,
+                                                                                              token.type, str(
                         self.scanner.get_position())))
         if value != "" and token.value != value:
             raise UnexpectedToken(
-                "Error at position {4}: Expected token type {2} of value {0}, got {1}".format(value, token.value,
+                "Error at position {3}: Expected token type {2} of value {0}, got {1}".format(value, token.value,
                                                                                               token.type, str(
                         self.scanner.get_position())))
         self._advance()
@@ -36,6 +37,22 @@ class Parser():
 
     def _check_token_type(self, type):
         return self.scanner.get_token().type == type
+
+    def _get_position(self):
+        return self.scanner.get_position()
+
+    def _get_token_type(self):
+        return self.scanner.get_token().type
+
+    def _get_token_value(self):
+        return self.scanner.get_token().value
+
+    def _raiseUnexpectedToken(self, message):
+        raise UnexpectedToken(
+            "Error: " + message + " at position {0}, token {1}, value {2}".format(self._get_position(),
+                                                                                  self._get_token_type(),
+                                                                                  self._get_token_value()))
+
 
     ## readers
 
@@ -94,7 +111,6 @@ class Parser():
             raise
         return Number(number)
 
-
     def _read_identifier(self):
         try:
             id = self._require_token(TokenType.id)
@@ -102,33 +118,97 @@ class Parser():
             raise
         return Identifier(id.value)
 
-    def _read_list_of_elements(self):
+    def _read_list_of_numbers(self):
         list = []
         try:  # check for left brace
             self._require_token(TokenType.lbrace)
         except UnexpectedToken as e:
             raise
-        try:  # empty braces?
+        try:
             self._require_token(TokenType.rbrace)
+            return list
         except UnexpectedToken as e:
-            pass  # no problem
-        while (True):  # read numbers
+            pass
+        while (True):
             try:
                 num = self._read_number()
                 list.append(num.value)
             except UnexpectedToken as e:
                 raise
-            if self._check_token_type(TokenType.rbrace):
-                break
-            try:  # read comma
+            try:
                 self._require_token(TokenType.comma)
             except UnexpectedToken as e:
-                raise
-            if self._check_token_type(TokenType.rbrace):  # brace ofter comma? wrong
-                raise UnexpectedToken(
-                    "Error at position {0} ,Expected number after comma".format(str(self.scanner.get_position())))
-        try:  # check for ending brace
+                break
+        try:
             self._require_token(TokenType.rbrace)
         except UnexpectedToken as e:
             raise
         return list
+
+    def _read_element(self):
+        elem = None
+        try:
+            elem = self._read_number()
+            return elem
+        except UnexpectedToken:
+            pass
+        try:
+            elem = self._read_identifier()
+            return elem
+        except UnexpectedToken as e:
+            raise
+
+    def _read_list_of_elements(self):
+        list = []
+        while (True):
+            try:
+                list.append(self._read_element())
+            except UnexpectedToken as e:
+                raise
+            try:
+                self._require_token(TokenType.comma)
+            except UnexpectedToken:
+                break
+        return list
+
+    def _read_arguments(self):
+        list = []
+        try:
+            self._require_token(TokenType.lparent)
+            list += self._read_list_of_elements()
+            self._require_token(TokenType.rparent)
+        except UnexpectedToken as e:
+            raise
+        return list
+
+    def _read_calc(self):
+        pass
+
+    def _read_top_calc(self):
+        try:
+            lop = self._read_argument()
+        except UnexpectedToken as e:
+            raise
+        try:
+            operator = self._require_token(TokenType.topOperator).value
+        except UnexpectedToken:
+            return Calculation(CalcType.topCalc, lop)
+        try:
+            rop = self._read_argument()
+        except UnexpectedToken as e:
+            raise
+        return Calculation(CalcType.topCalc, lop, operator, rop)
+
+    def _read_argument(self):
+        try:
+            op = self._read_element()
+            return op
+        except UnexpectedToken as e:
+            pass
+        try:
+            self._require_token(TokenType.lparent)
+            op = self._read_calc()
+            self._require_token(TokenType.rparent)
+            return op
+        except UnexpectedToken as e:
+            raise

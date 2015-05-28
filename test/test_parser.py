@@ -39,7 +39,6 @@ class ParserHelperTest(unittest.TestCase):
         parser = Parser(scanner)
         self.assertEqual(parser._check_token_type(TokenType.lparent), True)
 
-
 class ParserReadTest(unittest.TestCase):
     def setUp(self):
         pass
@@ -98,32 +97,98 @@ class ParserReadTest(unittest.TestCase):
         id = parser._read_identifier()
         self.assertEqual(id, Identifier(value))
 
-    def test_read_list_of_elements(self):
+    def test_read_list_of_numbers(self):
         value = "{12,-3,12.42,-31.21,+41}"
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
-        list = parser._read_list_of_elements()
+        list = parser._read_list_of_numbers()
         ref_list = [12, -3, 12.42, -31.21, 41]
         self.assertEqual(list, ref_list)
 
-    def test_fail_to_read_list_of_elements_without_brace(self):
+    def test_read_list_of_one_number(self):
+        value = "{12}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        list = parser._read_list_of_numbers()
+        ref_list = [12]
+        self.assertEqual(list, ref_list)
+
+    def test_fail_to_read_list_of_numbers_without_brace(self):
         value = "{12,-3,12.42,-31.21,+41"
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
-        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_numbers())
 
-    def test_fail_to_read_list_of_elements_ending_with_comma(self):
+    def test_fail_to_read_list_of_numbers_ending_with_comma(self):
         value = "{12,-3,12.42,-31.21,}"
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
-        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_numbers())
 
-    def test_fail_to_read_list_of_elements_with_wrong_element(self):
+    def test_fail_to_read_list_of_numbers_with_wrong_element(self):
         value = "{12,-3,a,-31.21,}"
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_numbers())
+
+    def test_read_element(self):
+        value = "b"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        id1 = parser._read_element()
+        id = Identifier("b")
+        self.assertEqual(id1, id)
+
+    def test_fail_read_element(self):
+        value = "}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_element())
+
+    def test_read_list_of_elements(self):
+        value = "12,-3,a,b"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        list = parser._read_list_of_elements()
+        ref_list = [Number(12, 1), Number(-3, 1), Identifier("a"), Identifier("b")]
+        self.assertEqual(list, ref_list)
+
+
+    def test_fail_to_read_list_of_elements_ending_with_comma(self):
+        value = "12,-3,a,b,"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
         self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
+
+    def test_read_args(self):
+        value = "(12,-3,a,b)"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        list = [Number(12, 1), Number(-3, 1), Identifier("a"), Identifier("b")]
+        self.assertEqual(list, parser._read_arguments())
+
+
+class ParserCalculationTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_read_top_calc(self):
+        input = "4*8"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_top_calc().get_value()
+        self.assertEqual(value, 32)
