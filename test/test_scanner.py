@@ -51,7 +51,7 @@ class NumberScannerTest(unittest.TestCase):
         input = "432"
         scanner = Scanner(input)
         scanner._try_number()
-        self.assertEqual(scanner.get_token(), Token(TokenType.number, "432"))
+        self.assertEqual(scanner.get_token(), Token(TokenType.integer, "432"))
 
     def test_try_to_read_float(self):
         input = "432.234"

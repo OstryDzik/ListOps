@@ -35,6 +35,8 @@ class Scanner():
                     return self.token
         raise ScannerException("Scanner error, no token read!")
 
+    def get_position(self):
+        return self.position
     ## string control methods
 
     def _store_position(self):

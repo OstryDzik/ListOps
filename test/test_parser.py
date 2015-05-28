@@ -1,6 +1,7 @@
 import unittest
 
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
+from src.grammar.objects import Identifier
 from src.parser import Parser
 from src.scanner import Scanner
 from src.tokens import Token, TokenType
@@ -88,3 +89,41 @@ class ParserReadTest(unittest.TestCase):
         float = Float("12.12")
         signedFloat = SignedFloat(float, "-")
         self.assertEqual(number, Number(signedFloat))
+
+    def test_read_id(self):
+        value = "abcd"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        id = parser._read_identifier()
+        self.assertEqual(id, Identifier(value))
+
+    def test_read_list_of_elements(self):
+        value = "{12,-3,12.42,-31.21,+41}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        list = parser._read_list_of_elements()
+        ref_list = [12, -3, 12.42, -31.21, 41]
+        self.assertEqual(list, ref_list)
+
+    def test_fail_to_read_list_of_elements_without_brace(self):
+        value = "{12,-3,12.42,-31.21,+41"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
+
+    def test_fail_to_read_list_of_elements_ending_with_comma(self):
+        value = "{12,-3,12.42,-31.21,}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
+
+    def test_fail_to_read_list_of_elements_with_wrong_element(self):
+        value = "{12,-3,a,-31.21,}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_list_of_elements())
