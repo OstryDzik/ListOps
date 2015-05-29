@@ -1,7 +1,7 @@
 import unittest
 
 from src.grammar.numbers import Number
-from src.grammar.objects import Calculation, CalcType
+from src.grammar.calculations import CalcType, Calculation
 
 
 class ObjectsTest(unittest.TestCase):

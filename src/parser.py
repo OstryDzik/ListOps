@@ -1,5 +1,7 @@
+from src.grammar.logic_test import TestArgument, LogicTest, TestType
 from src.grammar.numbers import Integer, SignedInteger, Float, SignedFloat, Number
-from src.grammar.objects import Identifier, Calculation, CalcType
+from src.grammar.objects import Identifier, List
+from src.grammar.calculations import CalcType, Calculation
 from src.memory import Memory
 from src.tokens import TokenType
 from src.utils import UnexpectedToken, EOFException
@@ -116,7 +118,7 @@ class Parser():
             id = self._require_token(TokenType.id)
         except UnexpectedToken:
             raise
-        return Identifier(id.value)
+        return Identifier(id.value, self.memory)
 
     def _read_list_of_numbers(self):
         list = []
@@ -143,7 +145,7 @@ class Parser():
             self._require_token(TokenType.rbrace)
         except UnexpectedToken as e:
             raise
-        return list
+        return List(list)
 
     def _read_element(self):
         elem = None
@@ -171,7 +173,7 @@ class Parser():
                 break
         return list
 
-    def _read_arguments(self):
+    def _read_arguments_list(self):
         list = []
         try:
             self._require_token(TokenType.lparent)
@@ -182,22 +184,38 @@ class Parser():
         return list
 
     def _read_calc(self):
-        pass
+        try:
+            lop = self._read_top_calc()
+        except UnexpectedToken as e:
+            raise
+        while (True):
+            try:
+                operator = self._require_token(TokenType.botOperator).value
+            except UnexpectedToken:
+                return Calculation(CalcType.calc, lop)
+            try:
+                rop = self._read_top_calc()
+            except UnexpectedToken as e:
+                raise
+            calc = Calculation(CalcType.calc, lop, operator, rop)
+            lop = calc
 
     def _read_top_calc(self):
         try:
             lop = self._read_argument()
         except UnexpectedToken as e:
             raise
-        try:
-            operator = self._require_token(TokenType.topOperator).value
-        except UnexpectedToken:
-            return Calculation(CalcType.topCalc, lop)
-        try:
-            rop = self._read_argument()
-        except UnexpectedToken as e:
-            raise
-        return Calculation(CalcType.topCalc, lop, operator, rop)
+        while (True):
+            try:
+                operator = self._require_token(TokenType.topOperator).value
+            except UnexpectedToken:
+                return Calculation(CalcType.topCalc, lop)
+            try:
+                rop = self._read_argument()
+            except UnexpectedToken as e:
+                raise
+            calc = Calculation(CalcType.topCalc, lop, operator, rop)
+            lop = calc
 
     def _read_argument(self):
         try:
@@ -212,3 +230,58 @@ class Parser():
             return op
         except UnexpectedToken as e:
             raise
+
+    def _read_test_argument(self):
+        try:
+            op = None
+            self._require_token(TokenType.lparent)
+            try:
+                op = self._require_token(TokenType.notSign).value
+            except UnexpectedToken:
+                pass
+            lop = self._read_logic_test()
+            self._require_token(TokenType.rparent)
+            return TestArgument(lop, op)
+        except UnexpectedToken as e:
+            pass
+        try:
+            lop = self._read_calc()
+            operator = self._require_token(TokenType.testOperator).value
+            rop = self._read_calc()
+            return TestArgument(lop, operator, rop)
+        except UnexpectedToken as e:
+            raise
+
+    def _read_top_logic_test(self):
+        try:
+            lop = self._read_test_argument()
+        except UnexpectedToken as e:
+            raise
+        while True:
+            try:
+                op = self._require_token(TokenType.topLogicOperator).value
+            except UnexpectedToken:
+                return LogicTest(TestType.topTest, lop)
+            try:
+                rop = self._read_test_argument()
+            except UnexpectedToken as e:
+                raise
+            test = LogicTest(TestType.topTest, lop, op, rop)
+            lop = test
+
+    def _read_logic_test(self):
+        try:
+            lop = self._read_top_logic_test()
+        except UnexpectedToken as e:
+            raise
+        while True:
+            try:
+                op = self._require_token(TokenType.botLogicOperator).value
+            except UnexpectedToken:
+                return LogicTest(TestType.botTest, lop)
+            try:
+                rop = self._read_top_logic_test()
+            except UnexpectedToken as e:
+                raise
+            test = LogicTest(TestType.botTest, lop, op, rop)
+            lop = test

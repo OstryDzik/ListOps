@@ -232,7 +232,6 @@ class Scanner():
                 return
         raise TokenMismatchException("Not a top operator")
 
-
     def _try_bot_operator(self):
         val = ""
         self._store_position()

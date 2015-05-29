@@ -1,9 +1,11 @@
 EOF = "$"
 
 
-class ParseException(Exception):
+class UnsupportedOperation(Exception):
     pass
 
+class ParseException(Exception):
+    pass
 
 class TokenMismatchException(Exception):
     pass

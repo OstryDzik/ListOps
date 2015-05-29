@@ -1,11 +1,11 @@
 import unittest
 
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
-from src.grammar.objects import Identifier
+from src.grammar.objects import Identifier, List
 from src.parser import Parser
 from src.scanner import Scanner
 from src.tokens import Token, TokenType
-from src.utils import UnexpectedToken
+from src.utils import UnexpectedToken, UnsupportedOperation
 
 
 class ParserHelperTest(unittest.TestCase):
@@ -38,6 +38,7 @@ class ParserHelperTest(unittest.TestCase):
         scanner.token = Token(TokenType.lparent, "(")
         parser = Parser(scanner)
         self.assertEqual(parser._check_token_type(TokenType.lparent), True)
+
 
 class ParserReadTest(unittest.TestCase):
     def setUp(self):
@@ -103,7 +104,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = parser._read_list_of_numbers()
-        ref_list = [12, -3, 12.42, -31.21, 41]
+        ref_list = List([12, -3, 12.42, -31.21, 41])
         self.assertEqual(list, ref_list)
 
     def test_read_list_of_one_number(self):
@@ -112,7 +113,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = parser._read_list_of_numbers()
-        ref_list = [12]
+        ref_list = List([12])
         self.assertEqual(list, ref_list)
 
     def test_fail_to_read_list_of_numbers_without_brace(self):
@@ -175,7 +176,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = [Number(12, 1), Number(-3, 1), Identifier("a"), Identifier("b")]
-        self.assertEqual(list, parser._read_arguments())
+        self.assertEqual(list, parser._read_arguments_list())
 
 
 class ParserCalculationTests(unittest.TestCase):
@@ -192,3 +193,119 @@ class ParserCalculationTests(unittest.TestCase):
         parser._advance()
         value = parser._read_top_calc().get_value()
         self.assertEqual(value, 32)
+
+
+    def test_read_two_top_calcs(self):
+        input = "4*8/2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_top_calc().get_value()
+        self.assertEqual(value, 16)
+
+    def test_read_bot_calc(self):
+        input = "4+8"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_calc().get_value()
+        self.assertEqual(value, 12)
+
+    def test_read_single_arg_calc(self):
+        input = "4"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_calc().get_value()
+        self.assertEqual(value, 4)
+
+    def test_read_calc_with_proper_operator_priority(self):
+        input = "4+8*2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_calc().get_value()
+        self.assertEqual(value, 20)
+
+    def test_read_calc_with_proper_reversed_operator_priority(self):
+        input = "4*8+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_calc().get_value()
+        self.assertEqual(value, 34)
+
+    def test_read_calc_with_proper_parenthesis(self):
+        input = "((4+8)*2)/12"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_calc().get_value()
+        self.assertEqual(value, 2)
+
+    def test_read_calc_with_variables(self):
+        input = "a+b"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([1, 2, 3]))
+        parser.memory.register_variable(Identifier("b"), List([4, 5, 6]))
+        parser._advance()
+        calc = parser._read_calc()
+        self.assertEqual(calc.get_value(), List([1, 2, 3, 4, 5, 6]))
+
+    def test_read_illegal_calc(self):
+        input = "a-b"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([1, 2, 3]))
+        parser.memory.register_variable(Identifier("b"), List([4, 5, 6]))
+        parser._advance()
+        calc = parser._read_calc()
+        self.assertRaises(UnsupportedOperation, lambda: calc.get_value())
+
+    def test_read_test_arg(self):
+        input = "4>8"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_test_argument().get_value()
+        self.assertEqual(value, False)
+
+    def test_read_top_logic_test(self):
+        input = "4>8 || 3<4"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_top_logic_test().get_value()
+        self.assertEqual(value, True)
+
+    def test_read_bot_logic_test(self):
+        input = "4>8 && 3<4"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_top_logic_test().get_value()
+        self.assertEqual(value, False)
+
+    def test_logic_operator_hierachy(self):
+        input = "10>8 || 3<4 && 8>9"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_logic_test().get_value()
+        self.assertEqual(value, False)
+        input = "7>8 || 3<4 && 10>9"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_logic_test().get_value()
+        self.assertEqual(value, True)
+
+    def test_read_logic_test_with_proper_parenthesis(self):
+        input = "(10>8 || (3<4 && 8>9))"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        value = parser._read_logic_test().get_value()
+        self.assertEqual(value, True)
+
