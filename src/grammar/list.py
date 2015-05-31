@@ -1,3 +1,4 @@
+from src.grammar.numbers import Integer
 from src.utils import UnsupportedOperation
 
 
@@ -39,23 +40,23 @@ class List():
         raise UnsupportedOperation("You can't compare two lists with <!")
 
     def get_value(self):
-        return self
+        return self.value
 
+    def length(self):
+        return Integer(len(self.value))
 
+    def filter(self, test):
+        result = []
+        for i in self.value:
+            if test.get_value(i):
+                result.append(i)
+        return List(result)
 
-class Identifier():
-    value = ""
-    def __init__(self, value, memory=None):
-        self.value = value
-        self.memory = memory
+    def map(self, mapping):
+        result = []
+        for i in self.value:
+            result.append(mapping.get_value(i))
+        return List(result)
 
-    def __eq__(self, other):
-        return self.value == other.value
-
-    def __ne__(self, other):
-        return self.value != other.value
-
-    def get_value(self):
-        return self.memory.get_variable_value(self)
-
-
+    def print(self):
+        print(self.value)

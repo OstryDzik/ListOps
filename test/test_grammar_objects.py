@@ -1,7 +1,10 @@
 import unittest
 
-from src.grammar.numbers import Number
+from src.grammar.list import List
+from src.grammar.numbers import Number, Integer
 from src.grammar.calculations import CalcType, Calculation
+from src.parser import Parser
+from src.scanner import Scanner
 
 
 class ObjectsTest(unittest.TestCase):
@@ -14,3 +17,32 @@ class ObjectsTest(unittest.TestCase):
     def test_calc(self):
         calc = Calculation(CalcType.topCalc, Number(12, 1), '*', Number(3, 1))
         self.assertEqual(calc.get_value(), 36)
+
+
+class ListTests(unittest.TestCase):
+    def setUp(self):
+        self.list = List([1, 2, 3, 4, 5])
+
+    def tearDown(self):
+        pass
+
+    def test_list_filter(self):
+        input = "a->a<=2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_func_expr()
+        result = self.list.filter(expr)
+        self.assertEqual(result, List([1, 2]))
+
+    def test_list_map(self):
+        input = "a->a+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_func_expr()
+        result = self.list.map(expr)
+        self.assertEqual(result, List([3, 4, 5, 6, 7]))
+
+    def test_list_length(self):
+        self.assertEqual(self.list.length(), Integer(5))

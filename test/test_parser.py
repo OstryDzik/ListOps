@@ -1,7 +1,8 @@
 import unittest
 
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
-from src.grammar.objects import Identifier, List
+from src.grammar.list import List
+from src.grammar.identifier import Identifier
 from src.parser import Parser
 from src.scanner import Scanner
 from src.tokens import Token, TokenType
@@ -309,3 +310,26 @@ class ParserCalculationTests(unittest.TestCase):
         value = parser._read_logic_test().get_value()
         self.assertEqual(value, True)
 
+
+class ParserFunctionsTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_read_func_expr_calc_test(self):
+        input = "a->a+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_func_expr()
+        self.assertEqual(expr.get_value(5), 7)
+
+    def test_read_func_expr_logic_test(self):
+        input = "a->a>2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_func_expr()
+        self.assertEqual(expr.get_value(1), False)

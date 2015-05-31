@@ -1,6 +1,8 @@
+from src.grammar.functions import FunctionExpr
 from src.grammar.logic_test import TestArgument, LogicTest, TestType
 from src.grammar.numbers import Integer, SignedInteger, Float, SignedFloat, Number
-from src.grammar.objects import Identifier, List
+from src.grammar.list import List
+from src.grammar.identifier import Identifier
 from src.grammar.calculations import CalcType, Calculation
 from src.memory import Memory
 from src.tokens import TokenType
@@ -26,9 +28,8 @@ class Parser():
         token = self.scanner.get_token()
         if token.type != type:
             raise UnexpectedToken(
-                "Error at position {3}: Expected token type {2} of value {0}, got {1}".format(type, token.value,
-                                                                                              token.type, str(
-                        self.scanner.get_position())))
+                "Error at position {2}: Expected token type {0} , got {1}".format(type, token.type,
+                                                                                  str(self.scanner.get_position())))
         if value != "" and token.value != value:
             raise UnexpectedToken(
                 "Error at position {3}: Expected token type {2} of value {0}, got {1}".format(value, token.value,
@@ -285,3 +286,25 @@ class Parser():
                 raise
             test = LogicTest(TestType.botTest, lop, op, rop)
             lop = test
+
+    def _read_func_expr(self):
+        try:
+            if (self.scanner.peek_token().type != TokenType.mapOperator):
+                raise UnexpectedToken("Not a function expression!")
+            self.memory.start_new_scope()
+            id = self._read_identifier()
+            self.memory.register_variable(id)
+            self._require_token(TokenType.mapOperator)
+            try:
+                self.scanner.thread_softly()
+                expr = self._read_logic_test()
+                self.memory.stop_scope()
+                return FunctionExpr(id, expr)
+            except UnexpectedToken:
+                self.scanner.go_back()
+                pass
+            expr = self._read_calc()
+            self.memory.stop_scope()
+            return FunctionExpr(id, expr)
+        except UnexpectedToken as e:
+            raise

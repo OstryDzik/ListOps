@@ -254,3 +254,12 @@ class StringScannerTest(unittest.TestCase):
         scanner = Scanner(input)
         scanner._try_string()
         self.assertEqual(scanner.get_token(), Token(TokenType.keyword, "for"))
+
+    def test_peek_token(self):
+        input = "for+2"
+        scanner = Scanner(input)
+        scanner.read_next_token()
+        token1 = scanner.peek_token()
+        token2 = scanner.read_next_token()
+        self.assertEqual(token1, Token(TokenType.botOperator, "+"))
+        self.assertEqual(token1, Token(TokenType.botOperator, "+"))

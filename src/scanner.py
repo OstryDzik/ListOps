@@ -35,8 +35,30 @@ class Scanner():
                     return self.token
         raise ScannerException("Scanner error, no token read!")
 
+    def peek_token(self):
+        pos = self.position
+        token = self.token
+        try:
+            next_token = self.read_next_token()
+        except ScannerException as e:
+            return Token(TokenType.EOF, EOF)
+        self.position = pos
+        self.token = token
+        return next_token
+
     def get_position(self):
         return self.position
+
+    def thread_softly(self):
+        self.snapshot_pos = self.position
+        self.snapshot_token = self.token
+
+    def go_back(self):
+        if self.snapshot_token is not None:
+            self.token = self.snapshot_token
+            self.position = self.snapshot_pos
+            self.snapshot_pos = None
+            self.snapshot_token = None
     ## string control methods
 
     def _store_position(self):
