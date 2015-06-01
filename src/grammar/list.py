@@ -60,3 +60,6 @@ class List():
 
     def print(self):
         print(self.value)
+
+    def call_function(self, func):
+        return func.call(self.value)

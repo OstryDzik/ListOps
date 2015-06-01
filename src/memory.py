@@ -30,7 +30,7 @@ class Memory():
 
     def get_variable_value(self, id):
         try:
-            return self.get_variable(id).get_value()
+            return self.get_variable(id)
         except UndeclaredVariable as e:
             raise
 

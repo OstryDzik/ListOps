@@ -1,4 +1,5 @@
 import unittest
+from src.grammar.functions import FunctionExpr, FilterFunction, FuncCall
 
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
 from src.grammar.list import List
@@ -333,3 +334,44 @@ class ParserFunctionsTests(unittest.TestCase):
         parser._advance()
         expr = parser._read_func_expr()
         self.assertEqual(expr.get_value(1), False)
+
+    def test_read_sys_func_args(self):
+        input = "(a->a>2)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_sys_func_args()
+        self.assertEqual(isinstance(expr, FunctionExpr), True)
+
+    def test_read_empty_sys_func_args(self):
+        input = "()"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_sys_func_args()
+        self.assertEqual(expr, None)
+
+    def test_read_sys_func(self):
+        input = "filter(a->a>2)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        func = parser._read_sys_func()
+        self.assertEqual(isinstance(func, FilterFunction), True)
+
+    def test_read_sys_func_call(self):
+        input = "a.filter(a->a>2)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        func = parser._read_func_call()
+        self.assertEqual(isinstance(func, FuncCall), True)
+
+    def test_execute_func_call(self):
+        input = "a.filter(a->a>2)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([1, 2, 3, 4, 5]))
+        parser._advance()
+        func = parser._read_func_call()
+        self.assertEqual(func.get_value(), List([3, 4, 5]))

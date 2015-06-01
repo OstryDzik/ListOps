@@ -3,13 +3,40 @@ class Literal():
     value_as_string = ""
 
     def get_value(self):
-        return self.value
+        return self
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def __ne__(self, other):
         return self.__dict__ != other.__dict__
+
+    def __add__(self, other):
+        return Number(self.value + other.value)
+
+    def __sub__(self, other):
+        return Number(self.value - other.value)
+
+    def __mul__(self, other):
+        return Number(self.value * other.value)
+
+    def __truediv__(self, other):
+        return Number(self.value / other.value)
+
+    def __mod__(self, other):
+        return Number(self.value % other.value)
+
+    def __ge__(self, other):
+        raise UnsupportedOperation("You can't compare two lists with >= !")
+
+    def __gt__(self, other):
+        raise UnsupportedOperation("You can't compare two lists with > !")
+
+    def __le__(self, other):
+        raise UnsupportedOperation("You can't compare two lists with <=!")
+
+    def __lt__(self, other):
+        raise UnsupportedOperation("You can't compare two lists with <!")
 
 
 class Integer(Literal):

@@ -19,7 +19,7 @@ class ObjectsTest(unittest.TestCase):
         self.assertEqual(calc.get_value(), 36)
 
 
-class ListTests(unittest.TestCase):
+class FunctionTests(unittest.TestCase):
     def setUp(self):
         self.list = List([1, 2, 3, 4, 5])
 
@@ -27,22 +27,28 @@ class ListTests(unittest.TestCase):
         pass
 
     def test_list_filter(self):
-        input = "a->a<=2"
+        input = "filter(a->a<=2)"
         scanner = Scanner(input)
         parser = Parser(scanner)
         parser._advance()
-        expr = parser._read_func_expr()
-        result = self.list.filter(expr)
+        expr = parser._read_sys_func()
+        result = self.list.call_function(expr)
         self.assertEqual(result, List([1, 2]))
 
     def test_list_map(self):
-        input = "a->a+2"
+        input = "map(a->a+2)"
         scanner = Scanner(input)
         parser = Parser(scanner)
         parser._advance()
-        expr = parser._read_func_expr()
-        result = self.list.map(expr)
+        expr = parser._read_sys_func()
+        result = self.list.call_function(expr)
         self.assertEqual(result, List([3, 4, 5, 6, 7]))
 
     def test_list_length(self):
+        input = "length()"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_sys_func()
+        result = self.list.call_function(expr)
         self.assertEqual(self.list.length(), Integer(5))

@@ -1,4 +1,5 @@
-from src.grammar.functions import FunctionExpr
+from _elementtree import ParseError
+from src.grammar.functions import FunctionExpr, FilterFunction, MapFunction, LengthFunction, PrintFunction, FuncCall
 from src.grammar.logic_test import TestArgument, LogicTest, TestType
 from src.grammar.numbers import Integer, SignedInteger, Float, SignedFloat, Number
 from src.grammar.list import List
@@ -6,7 +7,7 @@ from src.grammar.identifier import Identifier
 from src.grammar.calculations import CalcType, Calculation
 from src.memory import Memory
 from src.tokens import TokenType
-from src.utils import UnexpectedToken, EOFException
+from src.utils import UnexpectedToken, EOFException, SYS_FUNCS
 
 
 class Parser():
@@ -289,7 +290,7 @@ class Parser():
 
     def _read_func_expr(self):
         try:
-            if (self.scanner.peek_token().type != TokenType.mapOperator):
+            if self.scanner.peek_token().type != TokenType.mapOperator:
                 raise UnexpectedToken("Not a function expression!")
             self.memory.start_new_scope()
             id = self._read_identifier()
@@ -308,3 +309,59 @@ class Parser():
             return FunctionExpr(id, expr)
         except UnexpectedToken as e:
             raise
+
+    def _read_sys_func_args(self):
+        try:
+            self._require_token(TokenType.lparent)
+            try:
+                args = self._read_func_expr()
+            except UnexpectedToken:
+                args = None
+            self._require_token(TokenType.rparent)
+            return args
+        except UnexpectedToken as e:
+            raise
+
+    def _read_sys_func(self):
+        try:
+            self.scanner.thread_softly()
+            id = self._read_identifier()
+            args = self._read_sys_func_args()
+        except UnexpectedToken as e:
+            raise
+        if id.value == 'filter':
+            return FilterFunction(args)
+        if id.value == 'map':
+            return MapFunction(args)
+        if id.value == 'length':
+            return LengthFunction(args)
+        if id.value == 'print':
+            return PrintFunction(args)
+        self.scanner.go_back()
+        raise UnexpectedToken('Not a sys function')
+
+    def _read_cust_func(self):
+        pass
+
+    def _read_func_call(self):
+        try:
+            if self.scanner.peek_token().type != TokenType.dot:
+                raise UnexpectedToken("Not a function call!")
+        except UnexpectedToken as e:
+            raise
+        try:
+            who = self._read_identifier()
+        except UnexpectedToken as e:
+            raise
+        while (True):
+            self._require_token(TokenType.dot)
+            try:
+                what = self._read_sys_func()
+            except UnexpectedToken:
+                try:
+                    what = self._read_cust_func()
+                except UnexpectedToken as e:
+                    raise ParseError("Wrong function call!")
+            if self._get_token_type() != TokenType.dot:
+                return FuncCall(who, what)
+            who = FuncCall(who, what)

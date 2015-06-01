@@ -27,6 +27,7 @@ class UndeclaredVariable(Exception):
     pass
 
 
+SYS_FUNCS = ['filter', 'map', 'length', 'print']
 KEYWORDS = ['def', 'for', 'in', 'if', 'else', 'var', 'list']
 TOP_OPERATORS = ['*', '/', '%']
 BOT_OPERATORS = ['+', '-']

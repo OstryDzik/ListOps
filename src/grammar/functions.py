@@ -1,3 +1,5 @@
+from src.grammar.list import List
+from src.grammar.numbers import Integer
 from src.utils import ParseException
 
 
@@ -29,3 +31,62 @@ class FunctionExpr():
         self.id.update_value(value)
         return self.expr.get_value()
 
+
+class MapFunction():
+    def __init__(self, args):
+        if args is None:
+            raise ParseException("Wrong arguments for map function!")
+        self.mapping = args
+
+    def call(self, value):
+        result = []
+        for i in value:
+            result.append(self.mapping.get_value(i))
+        return List(result)
+
+
+class FilterFunction():
+    def __init__(self, args):
+        if args is None:
+            raise ParseException("Wrong arguments for filter function!")
+        self.test = args
+
+    def call(self, value):
+        result = []
+        for i in value:
+            if self.test.get_value(i):
+                result.append(i)
+        return List(result)
+
+
+class LengthFunction():
+    def __init__(self, args):
+        if args is not None:
+            raise ParseException("Wrong arguments for length function!")
+        pass
+
+    def call(self, value):
+        return Integer(len(value))
+
+
+class PrintFunction():
+    def __init__(self, args):
+        if args is not None:
+            raise ParseException("Wrong arguments for print function!")
+        pass
+
+    def call(self, value):
+        print(value)
+
+
+class FuncCall():
+    def __init__(self, who, what):
+        self.who = who
+        self.what = what
+
+    def get_value(self):
+        try:
+            caller = self.who.get_value()
+            return caller.call_function(self.what)
+        except AttributeError:
+            return self.who.call_function(self.what)
