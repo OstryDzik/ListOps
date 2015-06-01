@@ -1,6 +1,11 @@
 import unittest
-from src.grammar.functions import FunctionExpr, FilterFunction, FuncCall
 
+from src.grammar.assignment import Assignment, Declaration
+from src.grammar.calculations import Calculation
+from src.grammar.for_loop import ForLoop
+from src.grammar.functions import FunctionExpr, FilterFunction, FuncCall, SliceFunction
+from src.grammar.if_statement import IfStatement
+from src.grammar.logic_test import LogicTest
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
 from src.grammar.list import List
 from src.grammar.identifier import Identifier
@@ -106,7 +111,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = parser._read_list_of_numbers()
-        ref_list = List([12, -3, 12.42, -31.21, 41])
+        ref_list = List([Number(12), Number(-3), Number(12.42), Number(-31.21), Number(41)])
         self.assertEqual(list, ref_list)
 
     def test_read_list_of_one_number(self):
@@ -115,7 +120,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = parser._read_list_of_numbers()
-        ref_list = List([12])
+        ref_list = List([Number(12)])
         self.assertEqual(list, ref_list)
 
     def test_fail_to_read_list_of_numbers_without_brace(self):
@@ -161,7 +166,7 @@ class ParserReadTest(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         list = parser._read_list_of_elements()
-        ref_list = [Number(12, 1), Number(-3, 1), Identifier("a"), Identifier("b")]
+        ref_list = [Number(12), Number(-3), Identifier("a"), Identifier("b")]
         self.assertEqual(list, ref_list)
 
 
@@ -177,7 +182,7 @@ class ParserReadTest(unittest.TestCase):
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
-        list = [Number(12, 1), Number(-3, 1), Identifier("a"), Identifier("b")]
+        list = List([Number(12), Number(-3), Identifier("a"), Identifier("b")])
         self.assertEqual(list, parser._read_arguments_list())
 
 
@@ -194,7 +199,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_top_calc().get_value()
-        self.assertEqual(value, 32)
+        self.assertEqual(value, Number(32))
 
 
     def test_read_two_top_calcs(self):
@@ -203,7 +208,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_top_calc().get_value()
-        self.assertEqual(value, 16)
+        self.assertEqual(value, Number(16))
 
     def test_read_bot_calc(self):
         input = "4+8"
@@ -211,7 +216,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_calc().get_value()
-        self.assertEqual(value, 12)
+        self.assertEqual(value, Number(12))
 
     def test_read_single_arg_calc(self):
         input = "4"
@@ -219,7 +224,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_calc().get_value()
-        self.assertEqual(value, 4)
+        self.assertEqual(value, Number(4))
 
     def test_read_calc_with_proper_operator_priority(self):
         input = "4+8*2"
@@ -227,7 +232,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_calc().get_value()
-        self.assertEqual(value, 20)
+        self.assertEqual(value, Number(20))
 
     def test_read_calc_with_proper_reversed_operator_priority(self):
         input = "4*8+2"
@@ -235,7 +240,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_calc().get_value()
-        self.assertEqual(value, 34)
+        self.assertEqual(value, Number(34))
 
     def test_read_calc_with_proper_parenthesis(self):
         input = "((4+8)*2)/12"
@@ -243,7 +248,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_calc().get_value()
-        self.assertEqual(value, 2)
+        self.assertEqual(value, Number(2))
 
     def test_read_calc_with_variables(self):
         input = "a+b"
@@ -325,7 +330,7 @@ class ParserFunctionsTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         expr = parser._read_func_expr()
-        self.assertEqual(expr.get_value(5), 7)
+        self.assertEqual(expr.get_value(Number(5)), Number(7))
 
     def test_read_func_expr_logic_test(self):
         input = "a->a>2"
@@ -333,7 +338,7 @@ class ParserFunctionsTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         expr = parser._read_func_expr()
-        self.assertEqual(expr.get_value(1), False)
+        self.assertEqual(expr.get_value(Number(1)), False)
 
     def test_read_sys_func_args(self):
         input = "(a->a>2)"
@@ -367,11 +372,235 @@ class ParserFunctionsTests(unittest.TestCase):
         func = parser._read_func_call()
         self.assertEqual(isinstance(func, FuncCall), True)
 
-    def test_execute_func_call(self):
+    def test_execute_sys_func_call(self):
         input = "a.filter(a->a>2)"
         scanner = Scanner(input)
         parser = Parser(scanner)
-        parser.memory.register_variable(Identifier("a"), List([1, 2, 3, 4, 5]))
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
         parser._advance()
         func = parser._read_func_call()
-        self.assertEqual(func.get_value(), List([3, 4, 5]))
+        self.assertEqual(func.get_value(), List([Number(3), Number(4), Number(5)]))
+
+    def test_execute_chain_sys_func_call(self):
+        input = "a.filter(a->a>2).map(a->a+1)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
+        parser._advance()
+        func = parser._read_func_call()
+        self.assertEqual(func.get_value(), List([Number(4), Number(5), Number(6)]))
+
+    def test_read_slice(self):
+        input = "[1:2]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+        input = "[1:]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+        input = "[:2]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+        input = "[:]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+        input = "[a:2]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+        input = "[2]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice()
+        self.assertEqual(isinstance(slice, SliceFunction), True)
+
+    def test_read_slice_call(self):
+        input = "a[1:2]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        slice = parser._read_slice_call()
+        self.assertEqual(isinstance(slice, FuncCall), True)
+
+    def test_execute_slice_call(self):
+        input = "a[1:3]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
+        parser._advance()
+        slice = parser._read_slice_call()
+        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
+        input = "a[1:b]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
+        parser.memory.register_variable(Identifier("b"), Number(3))
+        parser._advance()
+        slice = parser._read_slice_call()
+        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
+
+
+class ParserVariablesTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_variable_assignment(self):
+        input = "a=2+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_assignment()
+        self.assertEqual(isinstance(expr, Assignment), True)
+        self.assertEqual(isinstance(expr.value, Calculation), True)
+        input = "a=b[2:18]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_assignment()
+        self.assertEqual(isinstance(expr.value, FuncCall), True)
+        input = "a=b.map(c->14)"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_assignment()
+        self.assertEqual(isinstance(expr.value, FuncCall), True)
+
+    def test_list_element_assignment(self):
+        input = "a[3]=2+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_assignment()
+        self.assertEqual(isinstance(expr, Assignment), True)
+        self.assertEqual(isinstance(expr.value, Calculation), True)
+
+    def test_variable_declaration(self):
+        input = "var a=2+2"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_declaration()
+        self.assertEqual(isinstance(expr, Declaration), True)
+        input = "var a"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        expr = parser._read_declaration()
+        self.assertEqual(isinstance(expr, Declaration), True)
+
+
+class ParserForTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_read_wrong_for_header(self):
+        value = "(a in b : )"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        self.assertRaises(UnexpectedToken, lambda: parser._read_for_loop_header())
+
+    def test_read_for_header(self):
+        value = "(a in b)"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        header = parser._read_for_loop_header()
+        self.assertEqual(header['id'], Identifier('a'))
+        self.assertEqual(header['list'], Identifier('b'))
+        self.assertEqual(header['test'], None)
+
+    def test_read_for_body(self):
+        value = "{a=12}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        body = parser._read_body()
+        self.assertEqual(isinstance(body, list), True)
+
+    def test_read_for_loop(self):
+        value = "for (a in b : a>4){a=a+1}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        loop = parser._read_for_loop()
+        self.assertEqual(isinstance(loop, ForLoop), True)
+
+
+class ParserIfTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_read_if_header(self):
+        value = "(a>4)"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        header = parser._read_if_header()
+        self.assertEqual(isinstance(header, LogicTest), True)
+
+    def test_read_if_body(self):
+        value = "if(a>4){a=12}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        header = parser._read_if_statement()
+        self.assertEqual(isinstance(header, IfStatement), True)
+
+    def test_read_if_else_statement(self):
+        value = "if(a>4){a=12}else{a=15}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        parser._advance()
+        header = parser._read_if_statement()
+        self.assertEqual(isinstance(header, IfStatement), True)
+        self.assertEqual(isinstance(header.alt_expr, list), True)
+
+
+class ParserComplexTest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_parse(self):
+        value = "if(a>4){a=12}else{a=15}"
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        statements = parser.parse()
+        self.assertEqual(len(statements.statements), 1)
+
+    def test_parse_combined_statements(self):
+        value = """if(a>4){a=12}else{a=15}
+                    for (a in b : a>4){a=a+1}
+                    a=2+2
+                    var a=2+2
+                    """
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        statements = parser.parse()
+        self.assertEqual(len(statements.statements), 4)

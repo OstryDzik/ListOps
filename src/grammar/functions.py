@@ -1,5 +1,6 @@
+from src.grammar.identifier import Identifier
 from src.grammar.list import List
-from src.grammar.numbers import Integer
+from src.grammar.numbers import Number
 from src.utils import ParseException
 
 
@@ -20,6 +21,7 @@ class FunctionExpr():
     def __init__(self, id, expr):
         self.id = id
         self.expr = expr
+        self.id.register_variable(None)
 
     def __eq__(self, other):
         return self.id == other.id and self.expr == other.expr
@@ -28,7 +30,7 @@ class FunctionExpr():
         return self.id != other.id or self.expr != other.expr
 
     def get_value(self, value):
-        self.id.update_value(value)
+        self.id.update_variable(value)
         return self.expr.get_value()
 
 
@@ -66,7 +68,7 @@ class LengthFunction():
         pass
 
     def call(self, value):
-        return Integer(len(value))
+        return Number(len(value))
 
 
 class PrintFunction():
@@ -77,7 +79,32 @@ class PrintFunction():
 
     def call(self, value):
         print(value)
+        return List(value)
 
+
+class SliceFunction():
+    def __init__(self, largument=None, rargument=None, indexOnly=False):
+        self.larg = largument
+        self.rarg = rargument
+        self.indexOnly = indexOnly
+
+    def call(self, value):
+        if isinstance(self.larg, Identifier):
+            self.larg == self.larg.get_value()
+        if isinstance(self.rarg, Identifier):
+            self.rarg == self.rarg.get_value()
+        try:
+            if self.indexOnly:
+                return List(value[self.larg.get_value()])
+            if self.larg is None and self.rarg is None:
+                return (List(value[:]))
+            if self.larg is None:
+                return (List(value[:self.rarg.get_value()]))
+            if self.rarg is None:
+                return (List(value[self.larg.get_value():]))
+            return (List(value[self.larg.get_value():self.rarg.get_value()]))
+        except AttributeError:
+            raise ParseException("Wrong slice operator call!")
 
 class FuncCall():
     def __init__(self, who, what):
@@ -90,3 +117,4 @@ class FuncCall():
             return caller.call_function(self.what)
         except AttributeError:
             return self.who.call_function(self.what)
+

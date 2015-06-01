@@ -40,7 +40,7 @@ class Scanner():
         token = self.token
         try:
             next_token = self.read_next_token()
-        except ScannerException as e:
+        except EOFException as e:
             return Token(TokenType.EOF, EOF)
         self.position = pos
         self.token = token
@@ -168,6 +168,14 @@ class Scanner():
             raise
         else:
             self.token = Token(TokenType.comma, val)
+
+    def _try_colon(self):
+        try:
+            val = self._read_one_char(':')
+        except TokenMismatchException as e:
+            raise
+        else:
+            self.token = Token(TokenType.colon, val)
 
     def _try_not_sign(self):
         try:

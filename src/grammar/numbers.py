@@ -6,10 +6,10 @@ class Literal():
         return self
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return self.value == other.value
 
     def __ne__(self, other):
-        return self.__dict__ != other.__dict__
+        return self.value != other.value
 
     def __add__(self, other):
         return Number(self.value + other.value)
@@ -27,16 +27,25 @@ class Literal():
         return Number(self.value % other.value)
 
     def __ge__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with >= !")
+        return self.value >= other.value
 
     def __gt__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with > !")
+        return self.value > other.value
 
     def __le__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with <=!")
+        return self.value <= other.value
 
     def __lt__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with <!")
+        return self.value < other.value
+
+    def __index__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.value_as_string
+
+    def call_function(self, func):
+        return func.call(self)
 
 
 class Integer(Literal):
@@ -72,10 +81,10 @@ class SignedFloat(Literal):
 
 
 class Number(Literal):
-    def __init__(self, signed_number, direct=None):
-        if direct is None:
+    def __init__(self, signed_number):
+        try:
             self.value = signed_number.value
             self.value_as_string = signed_number.value_as_string
-        else:
+        except AttributeError:
             self.value = signed_number
             self.value_as_string = str(signed_number)

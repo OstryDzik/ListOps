@@ -1,22 +1,34 @@
-from _elementtree import ParseError
-from src.grammar.functions import FunctionExpr, FilterFunction, MapFunction, LengthFunction, PrintFunction, FuncCall
+from src.grammar.expression import Expression
+from src.grammar.for_loop import ForLoop
+from src.grammar.functions import FunctionExpr, FilterFunction, MapFunction, LengthFunction, PrintFunction, FuncCall, \
+    SliceFunction
+from src.grammar.if_statement import IfStatement
 from src.grammar.logic_test import TestArgument, LogicTest, TestType
 from src.grammar.numbers import Integer, SignedInteger, Float, SignedFloat, Number
 from src.grammar.list import List
 from src.grammar.identifier import Identifier
 from src.grammar.calculations import CalcType, Calculation
+from src.grammar.assignment import Assignment, Declaration
+from src.grammar.program import Program
+from src.grammar.statement import Statement
 from src.memory import Memory
 from src.tokens import TokenType
-from src.utils import UnexpectedToken, EOFException, SYS_FUNCS
+from src.utils import UnexpectedToken, EOFException, ParseException
 
 
 class Parser():
     def __init__(self, scanner):
         self.scanner = scanner
         self.memory = Memory()
+        self.notEOF = True
 
     def parse(self):
-        return
+        statements = []
+        self._advance()
+        while (self.notEOF):
+            statements.append(self._read_statement())
+            if (self.scanner.get_token().type == TokenType.EOF): break
+        return Program(statements)
 
     ## helper methods
     def _advance(self):
@@ -24,6 +36,8 @@ class Parser():
             self.scanner.read_next_token()
         except EOFException:
             print("Encountered end of input")
+            self.notEOF = False
+            quit()
 
     def _require_token(self, type, value=""):
         token = self.scanner.get_token()
@@ -57,6 +71,10 @@ class Parser():
                                                                                   self._get_token_type(),
                                                                                   self._get_token_value()))
 
+    def _get_err_msg(self):
+        return "Error: at position {0}, token {1}, value {2}".format(self._get_position(),
+                                                                     self._get_token_type(),
+                                                                     self._get_token_value())
 
     ## readers
 
@@ -136,7 +154,7 @@ class Parser():
         while (True):
             try:
                 num = self._read_number()
-                list.append(num.value)
+                list.append(num)
             except UnexpectedToken as e:
                 raise
             try:
@@ -183,7 +201,7 @@ class Parser():
             self._require_token(TokenType.rparent)
         except UnexpectedToken as e:
             raise
-        return list
+        return List(list)
 
     def _read_calc(self):
         try:
@@ -294,7 +312,6 @@ class Parser():
                 raise UnexpectedToken("Not a function expression!")
             self.memory.start_new_scope()
             id = self._read_identifier()
-            self.memory.register_variable(id)
             self._require_token(TokenType.mapOperator)
             try:
                 self.scanner.thread_softly()
@@ -341,6 +358,7 @@ class Parser():
         raise UnexpectedToken('Not a sys function')
 
     def _read_cust_func(self):
+        ### TODO ###
         pass
 
     def _read_func_call(self):
@@ -361,7 +379,256 @@ class Parser():
                 try:
                     what = self._read_cust_func()
                 except UnexpectedToken as e:
-                    raise ParseError("Wrong function call!")
+                    raise ParseException("Wrong function call!")
             if self._get_token_type() != TokenType.dot:
                 return FuncCall(who, what)
             who = FuncCall(who, what)
+
+    def _read_slice_call(self):
+        try:
+            if self.scanner.peek_token().type != TokenType.lsquare:
+                raise UnexpectedToken("Not a slice call!")
+        except UnexpectedToken as e:
+            raise
+        try:
+            who = self._read_identifier()
+        except UnexpectedToken as e:
+            raise
+        try:
+            slice = self._read_slice()
+        except UnexpectedToken as e:
+            raise
+        return FuncCall(who, slice)
+
+    def _read_slice(self):
+        self._require_token(TokenType.lsquare)  # safe, read_slice_call ensures that
+        try:
+            larg = self._read_element()
+        except UnexpectedToken:
+            larg = None
+            pass
+        try:
+            self._require_token(TokenType.rsquare)
+            return SliceFunction(larg, indexOnly=True)
+        except:
+            pass
+        try:
+            self._require_token(TokenType.colon)
+        except:
+            raise ParseException("Wrong range specified!")
+        try:
+            rarg = self._read_element()
+        except UnexpectedToken:
+            rarg = None
+            pass
+        try:
+            self._require_token(TokenType.rsquare)
+        except UnexpectedToken as e:
+            raise
+        return SliceFunction(larg, rarg)
+
+    def _read_variable_assignment(self):
+        value = None
+        try:
+            value = self._read_calc()
+            return value
+        except UnexpectedToken as e:
+            pass
+        try:
+            value = self._read_logic_test()
+            return value
+        except UnexpectedToken as e:
+            pass
+        try:
+            value = self._read_func_call()
+            return value
+        except UnexpectedToken as e:
+            raise
+
+    def _read_list_assignment(self):
+        value = None
+        try:
+            value = self._read_list_of_numbers()
+            return value
+        except UnexpectedToken as e:
+            pass
+        try:
+            value = self._read_slice_call()
+            return value
+        except UnexpectedToken as e:
+            pass
+        try:
+            value = self._read_func_call()
+            return value
+        except UnexpectedToken as e:
+            raise
+
+    def _read_assignment(self):
+        try:
+            if self.scanner.peek_token().type not in [TokenType.assignOperator, TokenType.lsquare]:
+                raise UnexpectedToken("Not an assignment call!")
+        except UnexpectedToken as e:
+            raise
+        try:
+            id = self._read_identifier()
+            try:
+                index = self._read_selection()
+            except UnexpectedToken:
+                index = None
+                pass
+            self._require_token(TokenType.assignOperator)
+        except UnexpectedToken as e:
+            raise
+        try:
+            value = self._read_list_assignment()
+            return Assignment(id, value, index)
+        except UnexpectedToken:
+            pass
+        try:
+            value = self._read_variable_assignment()
+            return Assignment(id, value, index)
+        except UnexpectedToken as e:
+            raise
+
+    def _read_declaration(self):
+        try:
+            self._require_token(TokenType.keyword, 'var')
+        except UnexpectedToken as e:
+            raise
+        try:
+            assgn = self._read_assignment()
+            id = assgn.get_id()
+            return Declaration(id, assgn)
+        except UnexpectedToken as e:
+            pass
+        try:
+            id = self._read_identifier()
+            return Declaration(id)
+        except UnexpectedToken as e:
+            raise ParseException("Wrong variable assignment!")
+
+    def _read_selection(self):
+        try:
+            self._require_token(TokenType.lsquare)
+        except UnexpectedToken as e:
+            raise
+        try:
+            index = self._read_element()
+            self._require_token(TokenType.rsquare)
+        except UnexpectedToken as e:
+            raise ParseException("Wrong selection!")
+        return index
+
+    def _read_for_loop(self):
+        try:
+            self.memory.start_new_scope()
+            self._require_token(TokenType.keyword, 'for')
+        except UnexpectedToken as e:
+            self.memory.stop_scope()
+            raise
+        try:
+            header = self._read_for_loop_header()
+            body = self._read_body()
+            self.memory.stop_scope()
+            return ForLoop(header['id'], header['test'], header['list'], body)
+        except UnexpectedToken as e:
+            self.memory.stop_scope()
+            raise ParseException("Wrong for loop definition! " + str(e))
+
+    def _read_for_loop_header(self):
+        try:
+            self._require_token(TokenType.lparent)
+            id = self._read_identifier()
+            self._require_token(TokenType.keyword, 'in')
+            list = self._read_identifier()
+            try:
+                self._require_token(TokenType.colon)
+            except UnexpectedToken:
+                test = None
+            else:
+                try:
+                    test = self._read_logic_test()
+                except UnexpectedToken as e:
+                    raise
+            self._require_token(TokenType.rparent)
+        except UnexpectedToken as e:
+            raise
+        return {'id': id, 'test': test, 'list': list}
+
+    def _read_body(self):
+        expr = []
+        try:
+            self._require_token(TokenType.lbrace)
+            while (True):
+                expr.append(self._read_expression())
+                try:
+                    self._require_token(TokenType.rbrace)
+                except UnexpectedToken:
+                    pass
+                else:
+                    break
+        except UnexpectedToken as e:
+            raise
+        return expr
+
+    def _read_if_header(self):
+        try:
+            self._require_token(TokenType.lparent)
+            test = self._read_logic_test()
+            self._require_token(TokenType.rparent)
+            return test
+        except UnexpectedToken as e:
+            raise
+
+    def _read_if_statement(self):
+        try:
+            self._require_token(TokenType.keyword, 'if')
+        except UnexpectedToken:
+            raise
+        try:
+            test = self._read_if_header()
+            body = self._read_body()
+            try:
+                self._require_token(TokenType.keyword, 'else')
+            except UnexpectedToken:
+                return IfStatement(test, body)
+            alt_body = self._read_body()
+            return IfStatement(test, body, alt_body)
+        except UnexpectedToken:
+            raise ParseException("Error in If declaration!")
+
+    def _read_expression(self):
+        try:
+            expr = self._read_declaration()
+            return Expression(expr)
+        except UnexpectedToken:
+            pass
+        try:
+            expr = self._read_func_call()
+            return Expression(expr)
+        except UnexpectedToken:
+            pass
+        try:
+            expr = self._read_for_loop()
+            return Expression(expr)
+        except UnexpectedToken:
+            pass
+        try:
+            expr = self._read_if_statement()
+            return Expression(expr)
+        except UnexpectedToken:
+            pass
+        try:
+            expr = self._read_assignment()
+            return Expression(expr)
+        except UnexpectedToken:
+            raise ParseException("Invalid expression! " + self._get_err_msg())
+
+    def _read_statement(self):
+        try:
+            stmt = self._read_expression()
+            return Statement(stmt)
+        except ParseException as e:
+            raise
+        except UnexpectedToken as e:
+            raise

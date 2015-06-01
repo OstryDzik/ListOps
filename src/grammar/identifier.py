@@ -1,6 +1,3 @@
-from src.grammar.numbers import Number
-
-
 class Identifier():
     value = ""
 
@@ -20,13 +17,19 @@ class Identifier():
         return self.value != other.value or self.scope != self.scope
 
     def get_value(self):
-        return self.memory.get_variable_value(self)
+        return self.memory.get_variable(self)
 
-    def update_value(self, value):
-        self.memory.update_variable(self, Number(value, 1))
+    def update_variable(self, value):
+        self.memory.update_variable(self, value)
+
+    def register_variable(self, value):
+        self.memory.register_variable(self, value)
 
     def get_name(self):
         return self.value
 
     def get_scope(self):
         return self.scope
+
+    def delete_value(self):
+        self.memory.delete_variable(self)

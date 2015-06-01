@@ -39,6 +39,7 @@ class List():
     def __lt__(self, other):
         raise UnsupportedOperation("You can't compare two lists with <!")
 
+
     def get_value(self):
         return self.value
 

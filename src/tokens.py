@@ -24,6 +24,7 @@ class TokenType(Enum):
     assignOperator = "assignOperator"  # =
     rangeOperator = "rangeOperator"
     EOF = "EOF"
+    colon = ':'
 
 
 class Token():
