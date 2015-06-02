@@ -44,6 +44,9 @@ class Literal():
     def __repr__(self):
         return self.value_as_string
 
+    def __len__(self):
+        return Number(1)
+
     def call_function(self, func):
         return func.call(self)
 

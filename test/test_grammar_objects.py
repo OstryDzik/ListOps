@@ -1,4 +1,5 @@
 import unittest
+from src.grammar.cust_functions import FunctionDefinition, Function
 
 from src.grammar.identifier import Identifier
 from src.grammar.list import List
@@ -74,3 +75,40 @@ class FunctionTests(unittest.TestCase):
         loop = parser._read_if_statement()
         outcome = loop.get_value()
         self.assertEqual(parser.memory.get_variable(Identifier('a')), Number(12))
+
+    def test_execute_slice_call(self):
+        input = "a[1:3]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
+        parser._advance()
+        slice = parser._read_slice_call()
+        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
+        input = "a[1:b]"
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
+        parser.memory.register_variable(Identifier("b"), Number(3))
+        parser._advance()
+        slice = parser._read_slice_call()
+        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
+
+    def test_define_and_call_function(self):
+        input = """
+        def x(a,b,c)
+        {
+            b.print()
+            a.print()
+            c.print()
+            return
+        }
+        x(1,2,3)"""
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        func = parser._read_cust_function_definition()
+        func_call = parser._read_cust_func_call()
+        self.assertEqual(isinstance(func, FunctionDefinition), True)
+        self.assertEqual(isinstance(func_call, Function), True)
+        func.get_value()
+        func_call.get_value()

@@ -1,3 +1,4 @@
+from src.grammar.cust_functions import FunctionDefinition
 from src.grammar.list import List
 from src.grammar.numbers import Literal
 from src.utils import UndeclaredVariable
@@ -31,7 +32,7 @@ class Memory():
             var = self.scopes[0][id.value]
         else:
             raise UndeclaredVariable("Tried to use undeclared variable: {0}".format(id.value))
-        if not isinstance(var, Literal) and not isinstance(var, List):
+        if not isinstance(var, Literal) and not isinstance(var, List) and not isinstance(var, FunctionDefinition):
             return var.get_value()
         else:
             return var

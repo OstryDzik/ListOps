@@ -1,6 +1,9 @@
 EOF = "$"
 
 
+class RunError(Exception):
+    pass
+
 class UnsupportedOperation(Exception):
     pass
 
@@ -27,8 +30,10 @@ class UndeclaredVariable(Exception):
     pass
 
 
-SYS_FUNCS = ['filter', 'map', 'length', 'print']
-KEYWORDS = ['def', 'for', 'in', 'if', 'else', 'var', 'list']
+KEYWORDS = ['def', 'for', 'in', 'if', 'else', 'var', 'list', 'return']
 TOP_OPERATORS = ['*', '/', '%']
 BOT_OPERATORS = ['+', '-']
 
+HELP_MSG = """
+Please provide a file name with code to compile!
+"""

@@ -1,20 +1,7 @@
 from src.grammar.identifier import Identifier
 from src.grammar.list import List
 from src.grammar.numbers import Number
-from src.utils import ParseException
-
-
-class Function():
-    args = {}
-    exp = None
-
-    def __init__(self, exp, args):
-        for arg in args:
-            try:
-                self.args[arg.get_name()] = None
-            except TypeError:
-                raise ParseException("Wrong argument list initialization!")
-        self.exp = exp
+from src.utils import ParseException, RunError
 
 
 class FunctionExpr():
@@ -42,6 +29,8 @@ class MapFunction():
 
     def call(self, value):
         result = []
+        if isinstance(value, Number):
+            return List(self.mapping.get_value(value))
         for i in value:
             result.append(self.mapping.get_value(i))
         return List(result)
@@ -55,6 +44,9 @@ class FilterFunction():
 
     def call(self, value):
         result = []
+        if isinstance(value, Number):
+            if self.test.get_value(value):
+                return List(value)
         for i in value:
             if self.test.get_value(i):
                 result.append(i)
@@ -104,7 +96,9 @@ class SliceFunction():
                 return (List(value[self.larg.get_value():]))
             return (List(value[self.larg.get_value():self.rarg.get_value()]))
         except AttributeError:
-            raise ParseException("Wrong slice operator call!")
+            raise RunError("Wrong slice operator call!")
+        except TypeError:
+            raise RunError("You can't address index in number!")
 
 class FuncCall():
     def __init__(self, who, what):
@@ -117,4 +111,5 @@ class FuncCall():
             return caller.call_function(self.what)
         except AttributeError:
             return self.who.call_function(self.what)
+
 

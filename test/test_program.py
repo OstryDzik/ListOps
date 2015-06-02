@@ -45,16 +45,40 @@ class ProgramTest(unittest.TestCase):
         output = self.out.getvalue().strip()
         assert output == '[1, 2, 3, 4]\n[2, 4, 6, 8]\n6\n8\n[8]\n[2, 4, 6, 8]'
 
-    def test_parse_combin_statements(self):
+    def test_parse_combined_more_statements(self):
         value = """
         var a = {1,2,3,4}
         a=a.map(b->b*2).print()
         var b = a[1:8]
         b.print()
+        def x(y)
+        {
+            y = y*2
+            return y
+        }
+        a = x(5)
+        a.print()
         """
         scanner = Scanner(value)
         parser = Parser(scanner)
         program = parser.parse()
         program.run()
         output = self.out.getvalue().strip()
-        assert output == '[2, 4, 6, 8]\n[4, 6, 8]'
+        assert output == '[2, 4, 6, 8]\n[4, 6, 8]\n10'
+
+    def test_types(self):
+        value = """
+        var b = 5
+        var c = b.map(a->a+5)
+        var d = b.length()
+        var e = b.filter(b->b>4)
+        c.print()
+        d.print()
+        e.print()
+        """
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        program = parser.parse()
+        program.run()
+        output = self.out.getvalue().strip()
+        assert output == '10\n1\n5'

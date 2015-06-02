@@ -2,8 +2,9 @@ import unittest
 
 from src.grammar.assignment import Assignment, Declaration
 from src.grammar.calculations import Calculation
+from src.grammar.cust_functions import Function, FunctionDefinition
 from src.grammar.for_loop import ForLoop
-from src.grammar.functions import FunctionExpr, FilterFunction, FuncCall, SliceFunction
+from src.grammar.sys_functions import FunctionExpr, FilterFunction, FuncCall, SliceFunction
 from src.grammar.if_statement import IfStatement
 from src.grammar.logic_test import LogicTest
 from src.grammar.numbers import Integer, Float, SignedFloat, SignedInteger, Number
@@ -182,7 +183,7 @@ class ParserReadTest(unittest.TestCase):
         scanner = Scanner(value)
         parser = Parser(scanner)
         parser._advance()
-        list = List([Number(12), Number(-3), Identifier("a"), Identifier("b")])
+        list = [Number(12), Number(-3), Identifier("a"), Identifier("b")]
         self.assertEqual(list, parser._read_arguments_list())
 
 
@@ -369,7 +370,7 @@ class ParserFunctionsTests(unittest.TestCase):
         scanner = Scanner(input)
         parser = Parser(scanner)
         parser._advance()
-        func = parser._read_func_call()
+        func = parser._read_sys_func_call()
         self.assertEqual(isinstance(func, FuncCall), True)
 
     def test_execute_sys_func_call(self):
@@ -378,7 +379,7 @@ class ParserFunctionsTests(unittest.TestCase):
         parser = Parser(scanner)
         parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
         parser._advance()
-        func = parser._read_func_call()
+        func = parser._read_sys_func_call()
         self.assertEqual(func.get_value(), List([Number(3), Number(4), Number(5)]))
 
     def test_execute_chain_sys_func_call(self):
@@ -387,7 +388,7 @@ class ParserFunctionsTests(unittest.TestCase):
         parser = Parser(scanner)
         parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
         parser._advance()
-        func = parser._read_func_call()
+        func = parser._read_sys_func_call()
         self.assertEqual(func.get_value(), List([Number(4), Number(5), Number(6)]))
 
     def test_read_slice(self):
@@ -436,22 +437,50 @@ class ParserFunctionsTests(unittest.TestCase):
         slice = parser._read_slice_call()
         self.assertEqual(isinstance(slice, FuncCall), True)
 
-    def test_execute_slice_call(self):
-        input = "a[1:3]"
+
+    def test_read_cust_func_call(self):
+        input = "a(b, c)"
         scanner = Scanner(input)
         parser = Parser(scanner)
-        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
         parser._advance()
-        slice = parser._read_slice_call()
-        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
-        input = "a[1:b]"
+        func = parser._read_cust_func_call()
+        self.assertEqual(isinstance(func, Function), True)
+
+    def test_read_return_statement(self):
+        input = "return e"
         scanner = Scanner(input)
         parser = Parser(scanner)
-        parser.memory.register_variable(Identifier("a"), List([Number(1), Number(2), Number(3), Number(4), Number(5)]))
-        parser.memory.register_variable(Identifier("b"), Number(3))
         parser._advance()
-        slice = parser._read_slice_call()
-        self.assertEqual(slice.get_value(), List([Number(2), Number(3)]))
+        ret = parser._read_return_statement()
+        self.assertEqual(isinstance(ret, Identifier), True)
+
+    def test_read_cust_func_body(self):
+        input = """
+        {
+            b.print()
+            a.print()
+            return a
+        }"""
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        ret = parser._read_cust_function_body()
+        self.assertEqual(isinstance(ret[0], list), True)
+        self.assertEqual(isinstance(ret[1], Identifier), True)
+
+    def test_read_cust_func_definition(self):
+        input = """
+        def x(a,b,c)
+        {
+            b.print()
+            a.print()
+            return a
+        }"""
+        scanner = Scanner(input)
+        parser = Parser(scanner)
+        parser._advance()
+        func = parser._read_cust_function_definition()
+        self.assertEqual(isinstance(func, FunctionDefinition), True)
 
 
 class ParserVariablesTests(unittest.TestCase):
