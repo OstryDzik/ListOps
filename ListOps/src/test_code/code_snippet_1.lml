@@ -1,0 +1,16 @@
+var a = {1,2,3,4}
+a.print()
+a=a.map(b->b*2)
+a.print()
+for (r in a : r>4){r.print()}
+var b = a.filter(b->b>6)
+var d = b.length()
+if (d <= 1)
+{
+    b.print()
+    a.print()
+}
+else
+{
+    d.print()
+}
