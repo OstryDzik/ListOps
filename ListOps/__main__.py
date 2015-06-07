@@ -1,6 +1,6 @@
 import sys
-if "E:\Studia2015\TKOM" not in sys.path:
-    sys.path.append("E:\Studia2015\TKOM")
+if r'C:\Users\Filip\Documents\Studia\TKOM\ListOps' not in sys.path:
+    sys.path.append(r'C:\Users\Filip\Documents\Studia\TKOM\ListOps')
 
 from ListOps.src.parser import Parser
 from ListOps.src.scanner import Scanner

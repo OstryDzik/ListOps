@@ -5,7 +5,7 @@ class Identifier():
         self.value = value
         self.memory = memory
         if memory is None:
-            self.scope = 0
+            self.scope = [0]
         else:
             self.scope = memory.get_scope()
 

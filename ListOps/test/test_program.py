@@ -70,9 +70,9 @@ class ProgramTest(unittest.TestCase):
     def test_types(self):
         value = """
         var b = 5
+        var e = b.filter(b->b>4)
         var c = b.map(a->a+5)
         var d = b.length()
-        var e = b.filter(b->b>4)
         c.print()
         d.print()
         e.print()
@@ -83,3 +83,28 @@ class ProgramTest(unittest.TestCase):
         program.run()
         output = self.out.getvalue().strip()
         assert output == '10\n1\n5'
+
+    def test_func(self):
+        value = """
+        var a = {1,2,3,4}
+        def medium(a)
+        {
+            var sum = 0
+            for (x in a)
+            {
+                sum = sum + x
+            }
+            var len
+            len = a.length()
+            sum = sum / len
+            return sum
+        }
+        var med = medium(a)
+        med.print()
+        """
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        program = parser.parse()
+        program.run()
+        output = self.out.getvalue().strip()
+        assert output == '2.5'

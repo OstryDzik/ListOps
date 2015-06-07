@@ -325,10 +325,10 @@ class Scanner():
     def _read_integer(self):
         val = ""
         # non zero on start
-        if self._peek_char().isdigit() and self._peek_char() != '0':
+        if self._peek_char().isdigit():
             val += self._pop_char()
         else:
-            raise TokenMismatchException("Literal must start with non-0 digit!")
+            raise TokenMismatchException("Literal must start with digit!")
         # get digits
         while self._peek_char().isdigit():
             val += self._pop_char()
