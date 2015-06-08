@@ -1,5 +1,5 @@
 from ListOps.src.grammar.numbers import Integer
-from ListOps.src.utils import UnsupportedOperation
+from ListOps.src.utils import RunError
 
 
 class List():
@@ -16,28 +16,28 @@ class List():
         return List(self.value + other.value)
 
     def __sub__(self, other):
-        raise UnsupportedOperation("You can't subtract two lists!")
+        raise RunError("You can't subtract two lists!")
 
     def __mul__(self, other):
-        raise UnsupportedOperation("You can't multiply two lists!")
+        raise RunError("You can't multiply two lists!")
 
     def __truediv__(self, other):
-        raise UnsupportedOperation("You can't divide two lists!")
+        raise RunError("You can't divide two lists!")
 
     def __mod__(self, other):
-        raise UnsupportedOperation("You can't modulo two lists!")
+        raise RunError("You can't modulo two lists!")
 
     def __ge__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with >= !")
+        raise RunError("You can't compare two lists with >= !")
 
     def __gt__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with > !")
+        raise RunError("You can't compare two lists with > !")
 
     def __le__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with <=!")
+        raise RunError("You can't compare two lists with <=!")
 
     def __lt__(self, other):
-        raise UnsupportedOperation("You can't compare two lists with <!")
+        raise RunError("You can't compare two lists with <!")
 
 
     def get_value(self):

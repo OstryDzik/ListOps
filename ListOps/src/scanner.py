@@ -179,7 +179,11 @@ class Scanner():
 
     def _try_not_sign(self):
         try:
+            self._store_position()
             val = self._read_one_char('!')
+            if self._peek_char() == '=':
+                self._rewind()
+                raise TokenMismatchException("It's a logical operator")
         except TokenMismatchException as e:
             raise
         else:
@@ -197,14 +201,6 @@ class Scanner():
         else:
             self.token = Token(TokenType.assignOperator, val)
 
-    def _try_range_operator(self):
-        try:
-            val = self._read_one_char(':')
-        except TokenMismatchException as e:
-            raise
-        else:
-            self.token = Token(TokenType.rangeOperator, val)
-
     def _try_map_operator(self):
         try:
             self._store_position()
@@ -216,7 +212,7 @@ class Scanner():
         else:
             self.token = Token(TokenType.mapOperator, val)
 
-    def _try_top_logic_operator(self):
+    def _try_bot_logic_operator(self):
         try:
             self._store_position()
             val = self._read_one_char('|')
@@ -225,9 +221,9 @@ class Scanner():
             self._rewind()
             raise
         else:
-            self.token = Token(TokenType.topLogicOperator, val)
+            self.token = Token(TokenType.botLogicOperator, val)
 
-    def _try_bot_logic_operator(self):
+    def _try_top_logic_operator(self):
         try:
             self._store_position()
             val = self._read_one_char('&')
@@ -236,7 +232,7 @@ class Scanner():
             self._rewind()
             raise
         else:
-            self.token = Token(TokenType.botLogicOperator, val)
+            self.token = Token(TokenType.topLogicOperator, val)
 
     def _try_string(self):
         try:
@@ -330,6 +326,8 @@ class Scanner():
         else:
             raise TokenMismatchException("Literal must start with digit!")
         # get digits
+        if val == '0' and self._peek_char().isdigit():
+            raise TokenMismatchException("Literal must not start with 0!")
         while self._peek_char().isdigit():
             val += self._pop_char()
         return val

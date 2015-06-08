@@ -22,6 +22,11 @@ class NumberScannerTest(unittest.TestCase):
         scanner = Scanner(input)
         self.assertRaises(TokenMismatchException, lambda: scanner._read_integer())
 
+    def test_read_zero_integer(self):
+        input = "0"
+        scanner = Scanner(input)
+        self.assertEqual(scanner._read_integer(), "0")
+
     def test_fail_to_read_no_digits_after_minus(self):
         input = "-"
         scanner = Scanner(input)
@@ -156,11 +161,11 @@ class OperatorScannerTest(unittest.TestCase):
         scanner._try_dot()
         self.assertEqual(scanner.get_token(), Token(TokenType.dot, "."))
 
-    def test_try_range_operator(self):
+    def test_try_colon(self):
         input = ":"
         scanner = Scanner(input)
-        scanner._try_range_operator()
-        self.assertEqual(scanner.get_token(), Token(TokenType.rangeOperator, ":"))
+        scanner._try_colon()
+        self.assertEqual(scanner.get_token(), Token(TokenType.colon, ":"))
 
     def test_try_map_operator(self):
         input = "->"
@@ -176,17 +181,17 @@ class OperatorScannerTest(unittest.TestCase):
         current_pos = scanner.position
         self.assertEqual(starting_pos, current_pos)
 
-    def test_try_top_logic_operator(self):
+    def test_try_bot_logic_operator(self):
         input = "||"
         scanner = Scanner(input)
-        scanner._try_top_logic_operator()
-        self.assertEqual(scanner.get_token(), Token(TokenType.topLogicOperator, "||"))
+        scanner._try_bot_logic_operator()
+        self.assertEqual(scanner.get_token(), Token(TokenType.botLogicOperator, "||"))
 
-    def test_try_bot_logic_operator(self):
+    def test_try_top_logic_operator(self):
         input = "&&"
         scanner = Scanner(input)
-        scanner._try_bot_logic_operator()
-        self.assertEqual(scanner.get_token(), Token(TokenType.botLogicOperator, "&&"))
+        scanner._try_top_logic_operator()
+        self.assertEqual(scanner.get_token(), Token(TokenType.topLogicOperator, "&&"))
 
     def test_try_bot_operator(self):
         input = "+"

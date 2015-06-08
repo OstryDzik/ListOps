@@ -13,7 +13,7 @@ from ListOps.src.grammar.identifier import Identifier
 from ListOps.src.parser import Parser
 from ListOps.src.scanner import Scanner
 from ListOps.src.tokens import Token, TokenType
-from ListOps.src.utils import UnexpectedToken, UnsupportedOperation
+from ListOps.src.utils import UnexpectedToken, UnsupportedOperation, RunError
 
 
 class ParserHelperTest(unittest.TestCase):
@@ -269,7 +269,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser.memory.register_variable(Identifier("b"), List([4, 5, 6]))
         parser._advance()
         calc = parser._read_calc()
-        self.assertRaises(UnsupportedOperation, lambda: calc.get_value())
+        self.assertRaises(RunError, lambda: calc.get_value())
 
     def test_read_test_arg(self):
         input = "4>8"
@@ -279,15 +279,15 @@ class ParserCalculationTests(unittest.TestCase):
         value = parser._read_test_argument().get_value()
         self.assertEqual(value, False)
 
-    def test_read_top_logic_test(self):
+    def test_read_bot_logic_test(self):
         input = "4>8 || 3<4"
         scanner = Scanner(input)
         parser = Parser(scanner)
         parser._advance()
-        value = parser._read_top_logic_test().get_value()
+        value = parser._read_logic_test().get_value()
         self.assertEqual(value, True)
 
-    def test_read_bot_logic_test(self):
+    def test_read_top_logic_test(self):
         input = "4>8 && 3<4"
         scanner = Scanner(input)
         parser = Parser(scanner)
@@ -301,7 +301,7 @@ class ParserCalculationTests(unittest.TestCase):
         parser = Parser(scanner)
         parser._advance()
         value = parser._read_logic_test().get_value()
-        self.assertEqual(value, False)
+        self.assertEqual(value, True)
         input = "7>8 || 3<4 && 10>9"
         scanner = Scanner(input)
         parser = Parser(scanner)

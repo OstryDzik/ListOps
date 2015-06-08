@@ -108,3 +108,39 @@ class ProgramTest(unittest.TestCase):
         program.run()
         output = self.out.getvalue().strip()
         assert output == '2.5'
+
+    def test_complex_calculation(self):
+        value = """
+        var a = 8
+        var b = 5
+        var c = 1
+        c = (a+b)*((3+13)/2)
+        c.print()
+        """
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        program = parser.parse()
+        program.run()
+        output = self.out.getvalue().strip()
+        assert output == '104.0'
+
+    def test_complex_logic(self):
+        value = """
+        var a = 8
+        var b = 5
+        var c = 1
+        if (a>b && (a!=b || c <= b) && (!(a<b)))
+        {
+            c.print()
+        }
+        else
+        {
+            b.print()
+        }
+        """
+        scanner = Scanner(value)
+        parser = Parser(scanner)
+        program = parser.parse()
+        program.run()
+        output = self.out.getvalue().strip()
+        assert output == '1'

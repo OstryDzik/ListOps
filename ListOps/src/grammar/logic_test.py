@@ -24,10 +24,10 @@ class LogicTest():
             return self.calculate(lop, rop)
 
     def calculate(self, loperand, roperand):
-        if self.type == TestType.botTest:
+        if self.type == TestType.topTest:
             if self.operator == '&&':
                 return loperand and roperand
-        elif self.type == TestType.topTest:
+        elif self.type == TestType.botTest:
             if self.operator == '||':
                 return loperand or roperand
         else:

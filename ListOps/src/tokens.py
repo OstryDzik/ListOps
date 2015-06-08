@@ -22,7 +22,6 @@ class TokenType(Enum):
     dot = "dot"  # .
     mapOperator = "mapOperator"  # ->
     assignOperator = "assignOperator"  # =
-    rangeOperator = "rangeOperator"
     EOF = "EOF"
     colon = ':'
 

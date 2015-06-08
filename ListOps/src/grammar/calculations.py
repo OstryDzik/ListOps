@@ -1,6 +1,6 @@
 from enum import Enum
 
-from ListOps.src.utils import ParseException
+from ListOps.src.utils import RunError
 
 
 class CalcType(Enum):
@@ -37,4 +37,4 @@ class Calculation():
             if self.operator == '%':
                 return loperand % roperand
         else:
-            raise ParseException("Wrong calc type!")
+            raise RunError("Wrong calc type!")

@@ -709,6 +709,11 @@ class Parser():
         except UnexpectedToken:
             pass
         try:
+            expr = self._read_cust_func_call()
+            return Expression(expr)
+        except UnexpectedToken:
+            pass
+        try:
             expr = self._read_for_loop()
             return Expression(expr)
         except UnexpectedToken:

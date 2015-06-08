@@ -97,9 +97,7 @@ class FunctionTests(unittest.TestCase):
         input = """
         def x(a,b,c)
         {
-            b.print()
-            a.print()
-            c.print()
+            var d = a + b + c
             return
         }
         x(1,2,3)"""

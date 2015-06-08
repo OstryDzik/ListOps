@@ -1,6 +1,8 @@
 import sys
 if r'C:\Users\Filip\Documents\Studia\TKOM\ListOps' not in sys.path:
     sys.path.append(r'C:\Users\Filip\Documents\Studia\TKOM\ListOps')
+if r'E:\Studia2015\TKOM' not in sys.path:
+    sys.path.append(r'E:\Studia2015\TKOM')
 
 from ListOps.src.parser import Parser
 from ListOps.src.scanner import Scanner
@@ -40,10 +42,9 @@ def main():
             code = myfile.read()
     except:
         sys.exit("ERROR. The file doesn't exist!")
-
-
-    print("Parsing source:")
-    print(code)
+    if len(sys.argv) == 3 and sys.argv[2] == '-ps':
+        print("Parsing source:")
+        print(code)
     print("Output:")
     parser = Parser(Scanner(code))
     result = parser.parse_and_run()
